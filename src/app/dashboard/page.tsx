@@ -141,7 +141,6 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-amber-100">Sistem Absensi Digital</p>
           </div>
           <button
             onClick={handleLogout}
@@ -185,21 +184,6 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900">
             <Clock className="w-6 h-6" />
             <span>{currentTime.toLocaleTimeString('id-ID')}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Security Notice */}
-      <div className="px-6 mb-6">
-        <div className="card p-4 bg-amber-50 border border-amber-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Mode Super Strict Aktif</p>
-              <p className="text-xs text-amber-700 mt-1">
-                Perangkat dan akun ini terkunci permanen. Tidak bisa login di device/browser lain sampai logout manual.
-              </p>
-            </div>
           </div>
         </div>
       </div>

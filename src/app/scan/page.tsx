@@ -52,13 +52,18 @@ export default function ScanPage() {
   const startScanner = () => {
     if (scannerRef.current) return;
 
+    // Config untuk camera only
+    const scannerConfig = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      supportedScanTypes: [], // No file upload
+      showTorchButtonIfSupported: true,
+      showZoomSliderIfSupported: true,
+    };
+
     scannerRef.current = new Html5QrcodeScanner(
       "qr-reader",
-      { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        supportedScanTypes: [] 
-      },
+      scannerConfig,
       false
     );
 
@@ -67,11 +72,25 @@ export default function ScanPage() {
         handleScanResult(decodedText);
       },
       (error) => {
-        // Scan error, ignore for now
+        // Ignore errors
       }
     );
     
     setIsScanning(true);
+
+    // Remove file upload elements after render
+    setTimeout(() => {
+      const qrReader = document.getElementById('qr-reader');
+      if (qrReader) {
+        // Hide file upload sections
+        const sections = qrReader.querySelectorAll('div');
+        sections.forEach(section => {
+          if (section.innerHTML.includes('file') || section.innerHTML.includes('image')) {
+            section.style.display = 'none';
+          }
+        });
+      }
+    }, 100);
   };
 
   const handleScanResult = (decodedText: string) => {
@@ -85,12 +104,12 @@ export default function ScanPage() {
         setIsScanning(false);
       }
     } catch (error) {
-      alert('QR Code tidak valid!');
+      alert('QR Code tidak valid! Pastikan scan QR code yang benar.');
     }
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371000; // Earth radius in meters
+    const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -148,7 +167,6 @@ export default function ScanPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Scan QR Absensi</h1>
-            <p className="text-amber-100">Arahkan kamera ke QR Code</p>
           </div>
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
             <QrCode className="w-6 h-6" />
@@ -197,7 +215,10 @@ export default function ScanPage() {
                 Mulai Scan QR Code
               </button>
             ) : (
-              <p className="text-gray-600">Scanning QR Code...</p>
+              <div className="space-y-3">
+                <p className="text-gray-600">Scanning QR Code...</p>
+                <p className="text-sm text-gray-500">Arahkan kamera ke QR Code cabang</p>
+              </div>
             )}
           </div>
         )}
