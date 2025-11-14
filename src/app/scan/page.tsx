@@ -129,7 +129,7 @@ export default function ScanPage() {
     );
 
     if (distance > cabangData.toleransi) {
-      alert(`Anda terlalu jauh dari cabang! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
+      alert(`Anda terlalu jauh dari lokasi absen! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
       return;
     }
 
@@ -239,14 +239,14 @@ export default function ScanPage() {
                 <span className="text-gray-600">ID Cabang:</span>
                 <span className="font-medium">{cabangData.id_cabang}</span>
               </div>
-              <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                 <span className="text-gray-600">Koordinat:</span>
                 <span className="font-medium">{cabangData.lat}, {cabangData.long}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Toleransi:</span>
                 <span className="font-medium">{cabangData.toleransi}m</span>
-              </div>
+              </div> */}
             </div>
 
             {/* Action Buttons */}
