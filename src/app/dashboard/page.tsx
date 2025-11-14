@@ -23,22 +23,22 @@ export default function DashboardPage() {
     const userData = localStorage.getItem('user_data');
     const sessionToken = localStorage.getItem('session_token');
     const deviceId = localStorage.getItem('device_id');
+    const username = localStorage.getItem('username'); // ← ID_USER dari login
     
-    if (!userData || !sessionToken || !deviceId) {
+    if (!userData || !sessionToken || !deviceId || !username) {
       router.push('/login');
       return;
     }
 
-    // Validate session dengan backend
+    // Validate session dengan backend - PAKAI USERNAME (id_user)
     const validateSession = async () => {
       try {
-        const userObj = JSON.parse(userData);
         const response = await fetch(`${config.API_URL}/auth/validate-session`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            username: userObj.id_kar,
-            device_id: deviceId
+            username: username, // ← PAKAI username (id_user), BUKAN id_kar
+            device_id: deviceId 
           })
         });
         
@@ -47,9 +47,9 @@ export default function DashboardPage() {
         if (data.success) {
           setUser(data.user);
         } else {
-          // Session invalid, redirect to login
-          localStorage.clear();
-          router.push('/login');
+          console.log('Session validation failed:', data.message);
+          // Fallback: use stored user data
+          setUser(JSON.parse(userData));
         }
       } catch (error) {
         console.error('Session validation error:', error);
@@ -74,12 +74,13 @@ export default function DashboardPage() {
     
     try {
       const deviceId = localStorage.getItem('device_id');
+      const username = localStorage.getItem('username'); // ← ID_USER dari login
       
       const response = await fetch(`${config.API_URL}/auth/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          username: user.id_kar,
+          username: username, // ← PAKAI username (id_user)
           device_id: deviceId 
         })
       });
@@ -92,6 +93,7 @@ export default function DashboardPage() {
         localStorage.removeItem('session_token');
         localStorage.removeItem('device_id');
         localStorage.removeItem('login_time');
+        localStorage.removeItem('username'); // ← HAPUS JUGA username
         
         router.push('/login');
       } else {

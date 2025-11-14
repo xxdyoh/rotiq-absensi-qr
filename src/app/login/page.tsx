@@ -68,7 +68,6 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (data.success) {
-        // alert(`🔐 OTP UNTUK IT ADMIN:\n\nUser: ${data.user.nama}\nUsername: ${username}\nOTP: ${data.otp}\n\nBerlaku 5 menit`);
         setStep('otp');
       } else {
         setErrorMessage(data.message || 'Gagal meminta OTP');
@@ -104,10 +103,12 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (data.success) {
+        // SIMPAN SEMUA DATA YANG DIBUTUHKAN
         localStorage.setItem('session_token', data.session_token);
         localStorage.setItem('user_data', JSON.stringify(data.user)); 
         localStorage.setItem('device_id', deviceId);
         localStorage.setItem('login_time', new Date().toISOString());
+        localStorage.setItem('username', username.trim()); // ← SIMPAN USERNAME UNTUK DASHBOARD
         
         router.push('/dashboard');
       } else {
