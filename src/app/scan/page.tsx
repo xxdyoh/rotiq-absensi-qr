@@ -17,7 +17,6 @@ export default function ScanPage() {
 
   useEffect(() => {
     getCurrentLocation();
-    // Auto start camera ketika component mount
     setTimeout(() => {
       startCamera();
     }, 1000);
@@ -59,11 +58,9 @@ export default function ScanPage() {
     try {
       scannerRef.current = new Html5Qrcode("qr-reader");
       
-      // Dapatkan list camera dan pilih back camera
       const cameras = await Html5Qrcode.getCameras();
-      let cameraId = cameras[0]?.id; // Default ke camera pertama
+      let cameraId = cameras[0]?.id; 
       
-      // Cari back camera
       const backCamera = cameras.find(camera => 
         camera.label.toLowerCase().includes('back') || 
         camera.label.toLowerCase().includes('rear')
@@ -144,10 +141,10 @@ export default function ScanPage() {
       cabangData.lat, cabangData.long
     );
 
-    if (distance > cabangData.toleransi) {
-      alert(`Anda terlalu jauh dari cabang! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
-      return;
-    }
+    // if (distance > cabangData.toleransi) {
+    //   alert(`Anda terlalu jauh dari lokasi! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
+    //   return;
+    // }
 
     try {
       const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
@@ -183,7 +180,6 @@ export default function ScanPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Scan QR Absensi</h1>
-            <p className="text-amber-100">Arahkan kamera ke QR Code</p>
           </div>
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
             <QrCode className="w-6 h-6" />
@@ -250,7 +246,7 @@ export default function ScanPage() {
             
             <div id="qr-reader" className="mb-4 rounded-xl overflow-hidden"></div>
             
-            <div className="flex gap-3">
+            {/* <div className="flex gap-3">
               <button
                 onClick={startCamera}
                 className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
@@ -268,7 +264,7 @@ export default function ScanPage() {
                   Stop Camera
                 </button>
               )}
-            </div>
+            </div> */}
           </div>
         )}
 
@@ -287,14 +283,6 @@ export default function ScanPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">ID Cabang:</span>
                 <span className="font-medium">{cabangData.id_cabang}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Koordinat:</span>
-                <span className="font-medium">{cabangData.lat}, {cabangData.long}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Toleransi:</span>
-                <span className="font-medium">{cabangData.toleransi}m</span>
               </div>
             </div>
 
