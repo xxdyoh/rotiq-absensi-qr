@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import { QrCode, MapPin, Camera, AlertCircle, CheckCircle } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { QrCode, MapPin, Camera, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
 import { config } from '@/lib/config';
 
 export default function ScanPage() {
@@ -11,17 +11,19 @@ export default function ScanPage() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string>('');
   const [cabangData, setCabangData] = useState<any>(null);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [cameraError, setCameraError] = useState<string>('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     getCurrentLocation();
+    // Auto start camera ketika component mount
+    setTimeout(() => {
+      startCamera();
+    }, 1000);
+
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(error => {
-          console.error("Failed to clear html5QrcodeScanner.", error);
-        });
-      }
+      stopCamera();
     };
   }, []);
 
@@ -49,48 +51,64 @@ export default function ScanPage() {
     );
   };
 
-  const startScanner = () => {
-    if (scannerRef.current) return;
+  const startCamera = async () => {
+    if (scannerRef.current) {
+      await stopCamera();
+    }
 
-    // Config untuk camera only
-    const scannerConfig = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      supportedScanTypes: [], // No file upload
-      showTorchButtonIfSupported: true,
-      showZoomSliderIfSupported: true,
-    };
-
-    scannerRef.current = new Html5QrcodeScanner(
-      "qr-reader",
-      scannerConfig,
-      false
-    );
-
-    scannerRef.current.render(
-      (decodedText) => {
-        handleScanResult(decodedText);
-      },
-      (error) => {
-        // Ignore errors
+    try {
+      scannerRef.current = new Html5Qrcode("qr-reader");
+      
+      // Dapatkan list camera dan pilih back camera
+      const cameras = await Html5Qrcode.getCameras();
+      let cameraId = cameras[0]?.id; // Default ke camera pertama
+      
+      // Cari back camera
+      const backCamera = cameras.find(camera => 
+        camera.label.toLowerCase().includes('back') || 
+        camera.label.toLowerCase().includes('rear')
+      );
+      
+      if (backCamera) {
+        cameraId = backCamera.id;
       }
-    );
-    
-    setIsScanning(true);
 
-    // Remove file upload elements after render
-    setTimeout(() => {
-      const qrReader = document.getElementById('qr-reader');
-      if (qrReader) {
-        // Hide file upload sections
-        const sections = qrReader.querySelectorAll('div');
-        sections.forEach(section => {
-          if (section.innerHTML.includes('file') || section.innerHTML.includes('image')) {
-            section.style.display = 'none';
-          }
-        });
+      if (!cameraId) {
+        setCameraError('Tidak ada camera yang tersedia');
+        return;
       }
-    }, 100);
+
+      await scannerRef.current.start(
+        cameraId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => {
+          handleScanResult(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore scan errors
+        }
+      );
+      
+      setIsScanning(true);
+      setCameraError('');
+    } catch (error) {
+      console.error('Camera error:', error);
+      setCameraError('Gagal mengakses camera. Pastikan izin camera sudah diberikan.');
+    }
+  };
+
+  const stopCamera = async () => {
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try {
+        await scannerRef.current.stop();
+      } catch (error) {
+        console.error('Error stopping camera:', error);
+      }
+    }
+    setIsScanning(false);
   };
 
   const handleScanResult = (decodedText: string) => {
@@ -99,10 +117,8 @@ export default function ScanPage() {
       setCabangData(qrData.data[0]);
       setScanResult(decodedText);
       
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        setIsScanning(false);
-      }
+      // Stop camera setelah berhasil scan
+      stopCamera();
     } catch (error) {
       alert('QR Code tidak valid! Pastikan scan QR code yang benar.');
     }
@@ -129,7 +145,7 @@ export default function ScanPage() {
     );
 
     if (distance > cabangData.toleransi) {
-      alert(`Anda terlalu jauh dari lokasi absen! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
+      alert(`Anda terlalu jauh dari cabang! Jarak: ${distance.toFixed(0)}m, Maks: ${cabangData.toleransi}m`);
       return;
     }
 
@@ -167,6 +183,7 @@ export default function ScanPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Scan QR Absensi</h1>
+            <p className="text-amber-100">Arahkan kamera ke QR Code</p>
           </div>
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
             <QrCode className="w-6 h-6" />
@@ -200,26 +217,58 @@ export default function ScanPage() {
           </div>
         </div>
 
+        {/* Camera Status */}
+        {cameraError && (
+          <div className="card p-4 bg-red-50 border border-red-200">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">Camera Error</p>
+                <p className="text-sm text-red-700">{cameraError}</p>
+              </div>
+              <button
+                onClick={startCamera}
+                className="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition-all"
+              >
+                <RotateCcw className="w-4 h-4 text-red-600" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* QR Scanner */}
         {!scanResult && (
-          <div className="card p-6 text-center">
-            <div id="qr-reader" className="mb-4"></div>
+          <div className="card p-6">
+            <div className="text-center mb-4">
+              <h3 className="font-semibold text-gray-900 mb-2">Scanner Camera</h3>
+              <p className="text-sm text-gray-600">
+                {isScanning 
+                  ? 'Arahkan kamera ke QR Code cabang' 
+                  : 'Menyiapkan camera...'}
+              </p>
+            </div>
             
-            {!isScanning ? (
+            <div id="qr-reader" className="mb-4 rounded-xl overflow-hidden"></div>
+            
+            <div className="flex gap-3">
               <button
-                onClick={startScanner}
-                disabled={!location}
-                className="w-full btn-primary disabled:opacity-50 flex items-center justify-center gap-2"
+                onClick={startCamera}
+                className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
               >
                 <Camera className="w-5 h-5" />
-                Mulai Scan QR Code
+                {isScanning ? 'Restart Camera' : 'Start Camera'}
               </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-gray-600">Scanning QR Code...</p>
-                <p className="text-sm text-gray-500">Arahkan kamera ke QR Code cabang</p>
-              </div>
-            )}
+              
+              {isScanning && (
+                <button
+                  onClick={stopCamera}
+                  className="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:bg-gray-600 transition-all flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  Stop Camera
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -239,14 +288,14 @@ export default function ScanPage() {
                 <span className="text-gray-600">ID Cabang:</span>
                 <span className="font-medium">{cabangData.id_cabang}</span>
               </div>
-              {/* <div className="flex justify-between">
+              <div className="flex justify-between">
                 <span className="text-gray-600">Koordinat:</span>
                 <span className="font-medium">{cabangData.lat}, {cabangData.long}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Toleransi:</span>
                 <span className="font-medium">{cabangData.toleransi}m</span>
-              </div> */}
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -269,7 +318,7 @@ export default function ScanPage() {
               onClick={() => {
                 setScanResult(null);
                 setCabangData(null);
-                startScanner();
+                startCamera();
               }}
               className="w-full mt-3 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-all"
             >
