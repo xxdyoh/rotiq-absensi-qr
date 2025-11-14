@@ -67,9 +67,12 @@ export default function LoginPage() {
       
       const data = await response.json();
       
-      if (!data.success) {
+      if (data.success) {
+        // alert(`🔐 OTP UNTUK IT ADMIN:\n\nUser: ${data.user.nama}\nUsername: ${username}\nOTP: ${data.otp}\n\nBerlaku 5 menit`);
+        setStep('otp');
+      } else {
         setErrorMessage(data.message || 'Gagal meminta OTP');
-      } 
+      }
     } catch (error) {
       console.error('Request OTP error:', error);
       setErrorMessage(`Network error! Pastikan backend running di ${config.API_URL}`);
