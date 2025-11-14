@@ -51,7 +51,7 @@ export default function LoginPage() {
 
   const handleRequestOTP = async () => {
     if (!username.trim()) {
-      setErrorMessage('ID User harus diisi');
+      setErrorMessage('Username harus diisi');
       return;
     }
 
@@ -62,17 +62,14 @@ export default function LoginPage() {
       const response = await fetch(`${config.API_URL}/auth/request-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim() })
+        body: JSON.stringify({ username: username.trim() }) 
       });
       
       const data = await response.json();
       
-      if (data.success) {
-        alert(`🔐 OTP UNTUK IT ADMIN:\n\nUser: ${data.user.nama}\nID: ${data.user.id_kar}\nOTP: ${data.otp}\n\nBerlaku 5 menit`);
-        setStep('otp');
-      } else {
+      if (!data.success) {
         setErrorMessage(data.message || 'Gagal meminta OTP');
-      }
+      } 
     } catch (error) {
       console.error('Request OTP error:', error);
       setErrorMessage(`Network error! Pastikan backend running di ${config.API_URL}`);
@@ -104,13 +101,11 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (data.success) {
-        // Save session data PERMANENT
         localStorage.setItem('session_token', data.session_token);
-        localStorage.setItem('user_data', JSON.stringify(data.user));
+        localStorage.setItem('user_data', JSON.stringify(data.user)); 
         localStorage.setItem('device_id', deviceId);
         localStorage.setItem('login_time', new Date().toISOString());
         
-        // Redirect to dashboard
         router.push('/dashboard');
       } else {
         setErrorMessage(data.message || 'Verifikasi OTP gagal');
@@ -144,23 +139,13 @@ export default function LoginPage() {
     );
   }
 
-  // Device locked state
   if (deviceStatus === 'locked') {
-    const phoneNumber = '0895055654708';
-    const whatsappMessage = `Halo, saya butuh bantuan reset device lock untuk web absensi.\n\nDevice ID: ${deviceId}\nUser yang terkunci: ${lockedUser?.nama || 'Unknown'}`;
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+    const phoneNumber = '+62895055654708';
+    const whatsappUrl = `https://wa.me/${phoneNumber}`;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <AlertCircle className="w-10 h-10 text-red-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Perangkat Terkunci</h1>
-            <p className="text-gray-600">Tidak dapat mengakses sistem</p>
-          </div>
-
           <div className="card p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -172,7 +157,7 @@ export default function LoginPage() {
             
             {lockedUser && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                <p className="text-sm font-medium text-red-800">User yang Mengunci:</p>
+                <p className="text-sm font-medium text-red-800">User yang login di device ini:</p>
                 <p className="text-red-700 font-semibold">{lockedUser.nama}</p>
                 <p className="text-red-600 text-sm">ID: {lockedUser.id_kar}</p>
               </div>
@@ -183,7 +168,7 @@ export default function LoginPage() {
                 Untuk menggunakan perangkat ini, user yang terkunci harus logout terlebih dahulu.
               </p>
               <p className="text-xs text-gray-500">
-                Atau hubungi admin via WhatsApp untuk reset device lock.
+                Atau hubungi IT via WhatsApp untuk reset device lock.
               </p>
             </div>
 
@@ -214,7 +199,6 @@ export default function LoginPage() {
     );
   }
 
-  // Main login form
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -224,24 +208,14 @@ export default function LoginPage() {
             <Fingerprint className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{config.APP_NAME}</h1>
-          <p className="text-gray-600">Sistem Absensi Digital Premium</p>
-          <p className="text-xs text-gray-500 mt-1">v{config.APP_VERSION}</p>
         </div>
 
-        {/* Device Status Badge */}
-        <div className="mb-6 p-3 bg-green-100 border border-green-300 rounded-xl text-center animate-fade-in">
-          <p className="text-sm text-green-800 font-medium">
-            ✅ Device Ready - {deviceId.substring(0, 8)}...
-          </p>
-        </div>
-
-        {/* Login Card */}
         <div className="card p-8 animate-slide-up">
           {step === 'username' ? (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  ID User
+                  Username
                 </label>
                 <div className="relative">
                   <Smartphone className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
@@ -252,7 +226,7 @@ export default function LoginPage() {
                       setUsername(e.target.value);
                       setErrorMessage('');
                     }}
-                    placeholder="Masukkan ID User Anda"
+                    placeholder="Masukkan username Anda"
                     className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white/80 disabled:opacity-50"
                     disabled={isLoading}
                     onKeyPress={(e) => {
@@ -299,10 +273,10 @@ export default function LoginPage() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Verifikasi OTP</h3>
                 <p className="text-sm text-gray-600 mt-2">
-                  Masukkan 6 digit OTP yang diberikan IT Admin
+                  Masukkan 6 digit OTP
                 </p>
                 <p className="text-xs text-amber-600 mt-1 bg-amber-50 p-2 rounded-lg">
-                  User: <span className="font-semibold">{username}</span>
+                  Username: <span className="font-semibold">{username}</span>
                 </p>
               </div>
 
@@ -362,22 +336,6 @@ export default function LoginPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Security Notice */}
-        <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-fade-in">
-          <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Mode Keamanan Super Strict</p>
-              <p className="text-xs text-amber-700 mt-1">
-                • 1 device = 1 user permanen<br/>
-                • 1 user = 1 device aktif<br/>
-                • Session permanen sampai logout manual<br/>
-                • Tidak bisa ganti browser/device
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
